@@ -45,6 +45,7 @@
   loop: "{{ kvm_guests | dict2items }}"
   when: "item.value.network_config is defined"
 
+  #genisoimage -output cloud-init.iso -volid cidata -joliet -rock user-data meta-data
 - name: create cloud-init iso
   command: >
     cloud-localds -v {{ '--network-config=network-config.yaml' if item.value.network_config is defined else '' }} seed.img user-data meta-data
