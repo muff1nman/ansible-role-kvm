@@ -1,1 +1,4 @@
 local-hostname: {{ item.value.hostname }}
+{% if item.value.extra_meta_data is defined %}
+{{ item.value.extra_meta_data }}
+{% endif %}
