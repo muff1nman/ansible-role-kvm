@@ -1,0 +1,10 @@
+#cloud-config
+users:
+- name: {{ ansible_user }}
+  passwd: {{ ks_user_pw }}
+  lock_passwd: False
+  sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+  groups:
+  - "wheel"
+  ssh_pwauth: True
+  ssh-authorized-keys: {{ ks_user_ssh_keys | to_json }}

@@ -1,0 +1,76 @@
+---
+- name: setup source images
+  get_url:
+    dest: "{{ disks_location }}/{{ item.value.filename }}"
+    checksum: "{{ item.value.checksum }}"
+    url: "{{ item.value.url }}"
+  loop: "{{ ref_images | dict2items }}"
+
+- name: set disk path
+  set_fact:
+    disk_path: "{{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }}"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: init disk
+  shell: >
+    unxz -c
+    {{ disks_location }}/{{ ref_images[item.value.ref_image].filename }} > {{ disk_path }} {{ '&& qemu-img resize {{ disk_path }} {{ item.value.image_size }}' if item.value.image_size is defined else '' }}
+  args:
+    creates: "{{ disk_path }}"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create cloud-init-dir
+  file:
+    state: directory
+    path: "{{ disks_location }}/cloud-init/{{ item.key }}"
+    recurse: yes
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create cloud-init user data file
+  template:
+    src: user-data.j2
+    dest: "{{ disks_location }}/cloud-init/{{ item.key }}/user-data"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create cloud-init meta data file
+  template:
+    src: meta-data.j2
+    dest: "{{ disks_location }}/cloud-init/{{ item.key }}/meta-data"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create cloud-init network config file
+  template:
+    content: "{{ item.value.network_config | to_nice_yaml }}"
+    dest: "{{ disks_location }}/cloud-init/{{ item.key }}/network-config.yaml"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create cloud-init iso
+  command: >
+    cloud-localds -v --network-config=network-config.yaml seed.img user-data meta-data
+  args:
+    chdir: "{{ disks_location }}/cloud-init/{{ item.key }}"
+    creates: "{{ disks_location }}/cloud-init/{{ item.key }}/seed.img"
+  loop: "{{ kvm_guests | dict2items }}"
+
+- name: create vm
+  command: >
+            virt-install --import --name {{ item.key }}
+            --memory {{ item.value.mem }} --vcpus {{ item.value.cpus }}
+            --network bridge=brmain
+            --disk path={{ disks_location }}/cloud-init/{{ item.key }}/seed.img,device=cdrom
+            --disk {{ disk_path }}
+            --disk vol=itvexesme/unit:0:0:4
+            --noautoconsole --os-variant {{ item.value.os_type }}
+  when: item.key not in vms.list_vms
+  with_dict: "{{ kvm_guests }}"
+
+- name: start vm
+  virt:
+    name: "{{ item.key }}"
+    state: running
+  with_dict: "{{ kvm_guests }}"
+- name: set autostart for a VM
+  virt:
+    name: "{{ item.key }}"
+    autostart: yes
+  with_dict: "{{ kvm_guests }}"

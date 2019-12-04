@@ -1,0 +1,9 @@
+---
+disks_location: /var/lib/libvirt/images/
+ref_images:
+  centos1907:
+    filename: CentOS-7-x86_64-GenericCloud-1907.qcow2.xz
+    filetype: qcow2
+    url: https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1907.qcow2.xz
+    checksum: "sha256:24d4c4f20f48611f43c1fa420b66e2e552b2e341c318e8e39442df57021e9e7d"
+kvm_guests: {}
