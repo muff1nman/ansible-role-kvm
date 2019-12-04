@@ -8,3 +8,6 @@ users:
   - "wheel"
   ssh_pwauth: True
   ssh-authorized-keys: {{ ks_user_ssh_keys | to_json }}
+{% if item.value.extra_user_data is defined %}
+{{ item.value.extra_user_data }}
+{% endif %}

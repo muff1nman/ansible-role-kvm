@@ -43,14 +43,20 @@
     content: "{{ item.value.network_config | to_nice_yaml }}"
     dest: "{{ disks_location }}/cloud-init/{{ item.key }}/network-config.yaml"
   loop: "{{ kvm_guests | dict2items }}"
+  when: "item.value.network_config is defined"
 
 - name: create cloud-init iso
   command: >
-    cloud-localds -v --network-config=network-config.yaml seed.img user-data meta-data
+    cloud-localds -v {{ '--network-config=network-config.yaml' if item.value.network_config is defined else '' }} seed.img user-data meta-data
   args:
     chdir: "{{ disks_location }}/cloud-init/{{ item.key }}"
     creates: "{{ disks_location }}/cloud-init/{{ item.key }}/seed.img"
   loop: "{{ kvm_guests | dict2items }}"
+
+- name: get list of VMs
+  virt:
+    command: "list_vms"
+  register: vms
 
 - name: create vm
   command: >
@@ -69,6 +75,7 @@
     name: "{{ item.key }}"
     state: running
   with_dict: "{{ kvm_guests }}"
+
 - name: set autostart for a VM
   virt:
     name: "{{ item.key }}"
