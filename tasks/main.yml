@@ -39,7 +39,7 @@
   loop: "{{ kvm_guests | dict2items }}"
 
 - name: create cloud-init network config file
-  template:
+  copy:
     content: "{{ item.value.network_config | to_nice_yaml }}"
     dest: "{{ disks_location }}/cloud-init/{{ item.key }}/network-config.yaml"
   loop: "{{ kvm_guests | dict2items }}"
