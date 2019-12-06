@@ -61,24 +61,28 @@
 
 - name: create vm
   command: >
-            virt-install --import --name {{ item.key }}
-            --memory {{ item.value.mem }} --vcpus {{ item.value.cpus }}
+            virt-install
+            --import
+            --name {{ item.key }}
+            --memory {{ item.value.mem }}
+            --vcpus {{ item.value.cpus }}
             --network bridge=brmain
             --disk path={{ disks_location }}/cloud-init/{{ item.key }}/seed.img,device=cdrom
             --disk {{ disk_path }}
-            --disk vol=itvexesme/unit:0:0:4
-            --noautoconsole --os-variant {{ item.value.os_type }}
+            --noautoconsole 
+            --os-variant {{ item.value.os_type }}
+            {{ item.value.kvm_extra_arg | default('') }}
   when: item.key not in vms.list_vms
-  with_dict: "{{ kvm_guests }}"
+  loop: "{{ kvm_guests | dict2items }}"
 
 - name: start vm
   virt:
     name: "{{ item.key }}"
     state: running
-  with_dict: "{{ kvm_guests }}"
+  loop: "{{ kvm_guests | dict2items }}"
 
 - name: set autostart for a VM
   virt:
     name: "{{ item.key }}"
     autostart: yes
-  with_dict: "{{ kvm_guests }}"
+  loop: "{{ kvm_guests | dict2items }}"
