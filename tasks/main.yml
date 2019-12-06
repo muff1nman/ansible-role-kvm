@@ -6,17 +6,12 @@
     url: "{{ item.value.url }}"
   loop: "{{ ref_images | dict2items }}"
 
-- name: set disk path
-  set_fact:
-    disk_path: "{{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }}"
-  loop: "{{ kvm_guests | dict2items }}"
-
 - name: init disk
   shell: >
     unxz -c
-    {{ disks_location }}/{{ ref_images[item.value.ref_image].filename }} > {{ disk_path }} {{ '&& qemu-img resize {{ disk_path }} {{ item.value.image_size }}' if item.value.image_size is defined else '' }}
+    {{ disks_location }}/{{ ref_images[item.value.ref_image].filename }} > {{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }} {{ '&& qemu-img resize {{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }} {{ item.value.image_size }}' if item.value.image_size is defined else '' }}
   args:
-    creates: "{{ disk_path }}"
+    creates: "{{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }}"
   loop: "{{ kvm_guests | dict2items }}"
 
 - name: create cloud-init-dir
@@ -68,7 +63,7 @@
             --vcpus {{ item.value.cpus }}
             --network bridge=brmain
             --disk path={{ disks_location }}/cloud-init/{{ item.key }}/seed.img,device=cdrom
-            --disk {{ disk_path }}
+            --disk {{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }}
             --noautoconsole 
             --os-variant {{ item.value.os_type }}
             {{ item.value.kvm_extra_arg | default('') }}
