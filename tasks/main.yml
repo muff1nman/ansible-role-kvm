@@ -61,7 +61,7 @@
             --name {{ item.key }}
             --memory {{ item.value.mem }}
             --vcpus {{ item.value.cpus }}
-            --network bridge=brmain
+            {{ item.value.nets | default([]) | map('regex_replace', '^', '--network ') | list | join(' ') }}
             --disk path={{ disks_location }}/cloud-init/{{ item.key }}/seed.img,device=cdrom
             --disk {{ disks_location }}/{{ item.key }}.{{ ref_images[item.value.ref_image].filetype }}
             --noautoconsole 
