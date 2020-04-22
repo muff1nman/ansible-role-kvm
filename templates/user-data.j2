@@ -1,6 +1,6 @@
 #cloud-config
 users:
-- name: {{ ansible_user }}
+- name: {{ ks_user | default(ansible_user) }}
   passwd: {{ ks_user_pw }}
   lock_passwd: False
   sudo: ["ALL=(ALL) NOPASSWD:ALL"]
